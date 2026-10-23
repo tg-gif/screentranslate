@@ -31,7 +31,10 @@ jobs:
           rmdir cmdline-tools-tmp
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$ANDROID_HOME" --licenses > /dev/null 2>&1 || true
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$ANDROID_HOME" "platforms;android-34" "build-tools;34.0.0"
+          # 关键：runner 预置的 ANDROID_SDK_ROOT 指向别处，和我们装的 SDK 路径不同，
+          # AGP 发现两条不同的 SDK 路径会直接报错。这里把两个变量都指向我们自己的 SDK。
           echo "ANDROID_HOME=$ANDROID_HOME" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> "$GITHUB_ENV"
           echo "$ANDROID_HOME/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
 
       - name: Setup Gradle 8.7
