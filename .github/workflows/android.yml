@@ -16,6 +16,7 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      # 手动安装官方 Android SDK（不用 android-actions/setup-android，那个不稳）
       - name: Setup Android SDK
         run: |
           set -e
@@ -38,8 +39,24 @@ jobs:
         with:
           gradle-version: '8.7'
 
-      - name: Build Debug APK
-        run: gradle assembleDebug --no-daemon --stacktrace
+      # 下载依赖易因网络波动失败：最多重试 3 次，并加大 HTTP 超时到 120s
+      - name: Build Debug APK (retry)
+        shell: bash
+        run: |
+          ok=0
+          for i in 1 2 3; do
+            echo "===== build attempt $i ====="
+            if gradle assembleDebug --no-daemon --stacktrace \
+              -Dorg.gradle.internal.http.connectionTimeout=120000 \
+              -Dorg.gradle.internal.http.socketTimeout=120000; then
+              ok=1
+              echo "BUILD_OK"
+              break
+            fi
+            echo "attempt $i failed; retrying in 15s..."
+            sleep 15
+          done
+          if [ "$ok" != "1" ]; then echo "ALL_ATTEMPTS_FAILED"; exit 1; fi
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
