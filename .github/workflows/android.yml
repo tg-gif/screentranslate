@@ -1,12 +1,8 @@
 name: Build APK
-
-# 推送到 GitHub 后自动在云端编译出可直接安装的 APK，
-# 无需在本地安装 Android Studio / JDK / Android SDK。
 on:
   push:
     branches: [ main, master ]
   workflow_dispatch:
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -20,19 +16,28 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Setup Android SDK (含 platform-34 与 build-tools)
-        uses: android-actions/setup-android@v3
-        with:
-          packages: |
-            platforms;android-34
-            build-tools;34.0.0
+      - name: Setup Android SDK
+        run: |
+          set -e
+          export ANDROID_HOME="$HOME/android-sdk"
+          mkdir -p "$ANDROID_HOME"
+          cd "$ANDROID_HOME"
+          curl -sSLo cmdline-tools.zip https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+          unzip -q cmdline-tools.zip
+          mv cmdline-tools cmdline-tools-tmp
+          mkdir -p cmdline-tools/latest
+          mv cmdline-tools-tmp/* cmdline-tools/latest/
+          rmdir cmdline-tools-tmp
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$ANDROID_HOME" --licenses > /dev/null 2>&1 || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$ANDROID_HOME" "platforms;android-34" "build-tools;34.0.0"
+          echo "ANDROID_HOME=$ANDROID_HOME" >> "$GITHUB_ENV"
+          echo "$ANDROID_HOME/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
 
       - name: Setup Gradle 8.7
         uses: gradle/actions/setup-gradle@v3
         with:
           gradle-version: '8.7'
 
-      # 不用 gradlew wrapper，直接用 gradle 命令，省去 wrapper jar 的依赖
       - name: Build Debug APK
         run: gradle assembleDebug --no-daemon --stacktrace
 
