@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">界面翻译</string>
+    <string name="accessibility_label">界面翻译服务</string>
+    <string name="accessibility_desc">用于读取屏幕上其他 App 显示的文字并翻译成中文。开启后桌面会出现一个紫色悬浮球，可点击取词或整页翻译。</string>
+</resources>
